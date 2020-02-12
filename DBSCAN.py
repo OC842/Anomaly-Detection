@@ -1,49 +1,38 @@
-import numpy as np
-
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from sklearn.datasets import make_blobs
 from sklearn.preprocessing import StandardScaler
-
 import matplotlib.pyplot as plt
-
 from mpl_toolkits.mplot3d import Axes3D
-
-#Creating random sample of data similar to real data
 import numpy.random as rnd
+import numpy as np
 
+
+#Create 3D data set
 size = 100
 x = rnd.random(size)
+y = rnd.random(size)
+z = rnd.random(size)
 
-s = rnd.random(size)
-t = rnd.random(size)
-u = rnd.random(size)
-
+#Randomly create anomalies
 i = 0
 while(i < 10):
 	h = rnd.randint(0, size, 1)
-	x[h] = x[h] + rnd.randint(0, 5, 1)
+	z[h] = z[h] + rnd.randint(0, 5, 1)
 	i += 1
 
-y = 0
-a = []
-
-while(y < size):
-	a.append(y)
-	y += 1
 	
 b = []
 
-for i in range(len(s)):
-	b.append([s[i], t[i], x[i]])
+#Create 3D array with data set
+for i in range(len(x)):
+	b.append([x[i], y[i], z[i]])
 	
 #Transformed into Numpy array for ease
 data = np.array(b)
 
 
-
-
-
+#Plot graph of data
 fig = plt.figure(1)
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter(data[:,0], data[:,1], data[:,2])
@@ -107,6 +96,12 @@ tilde = []
 non_tilde = []	
 Outliers = []
 
+#This loop creates creates 3 arrays.
+# 1. The outliers in the form (No. Outliers, 1)
+# 2. An array of the cluster points from the normal core_samples_mask in the form (No. Points in cluster, No. Clusters)
+# 3. An array of the cluster points from the tilde (~) core_samples_mask in the form (No. Points in cluster, No. Clusters)
+
+#Usually the tilde array is empty but occasionally in sparse clusters there will be some points.
 for k in unique_labels:
 	
 	class_member_mask = (labels == k)
@@ -121,58 +116,67 @@ for k in unique_labels:
 	
 
 
+#Finding the number of clusters present and the dimnesions of the data.
 total_clusters = len(non_tilde)
-
 dimensions = len(non_tilde[0][0])
 
+#Ndarray to calculate the length of each tilde and non_tilde array
 lengths = np.ndarray((total_clusters, 2), dtype = int)
 
 Clusters = []
 
+#Populating Ndarray with values, becomes important as the aim is to merge the values in tilde
+# and non_tilde
 for i in range(total_clusters):
 
 	lengths[i][0] = len(non_tilde[i])
 	lengths[i][1] = len(tilde[i])
 	
-print(lengths)
+#print(lengths)
 	
 
 for p in range(total_clusters):
 
-	first = non_tilde[p]
-	fisrt = tilde[p]
-		
+	#Taking the individual cluster tilde and non_tilde_values
+	non_tilde_values = non_tilde[p]
+	tilde_values = tilde[p]
+	
+	#Creating Ndarray in the form (Total no. points in the cluster, No. Dimensions)
 	x = lengths[p,0] + lengths[p][1]
 	y = dimensions
-		
+	
+	#Create ndarray to hold the coordinates of every point in the cluster
 	c = np.ndarray(shape = (x, y))
 		
 
-	
+	#This loop populates the ndarray with all the values from non_tilde
 	for i in range(lengths[p][0]):
 
 		for j in range(dimensions):
 		
-			c[i][j] = first[i][j]
+			c[i][j] = non_tilde_values[i][j]
 			
-			
+	#This loop then populates the ndarray with all the values from tilde
 	for i in range(lengths[p][1]):
 		for j in range(dimensions):
-			c[i + lengths[p][0]][j] = fisrt[i][j]
+			c[i + lengths[p][0]][j] = tilde_values[i][j]
 
-		
+	#As c was created to be as long as len(non_tilde) + len(tilde) every index has a value
+	
+	#Now c contains the coordinates for every point in the cluster.
+	#It now loops over every cluster to create a list of the ndarrays which hold the 
+	# coordinates.
 	Clusters.append(c)
 
 	
-
+#Plot the data with every cluster as a different colour
 fig = plt.figure(8)
 ax = fig.add_subplot(111, projection='3d')
 for i in range(len(Clusters)):
 
 	ax.scatter(Clusters[i][:,0], Clusters[i][:,1], Clusters[i][:,2], c = [colors[i]])
-	ax.scatter(Outliers[0][:,0], Outliers[0][:,1], Outliers[0][:,2], c = ['#000000'])
-
 	
-	
+#Plot the outliers in black
+ax.scatter(Outliers[0][:,0], Outliers[0][:,1], Outliers[0][:,2], c = ['#000000'])
 plt.title('Number of outliers: %d' % n_noise_)
 plt.show()
